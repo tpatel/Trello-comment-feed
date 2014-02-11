@@ -31,13 +31,16 @@
 				padding: 4px;
 			}
 			.member {
-				display:inline-block;
+				float:left;
 				border-radius: 5px;
-				margin:5px;
+				margin-right:10px;
 				vertical-align:middle;
 			}
-			code {
+			small {
 				color: #3D3D3D;
+			}
+			.paragraph {
+				overflow:hidden;
 			}
 		</style>
 	</head>
@@ -81,22 +84,26 @@
 					$.each(actions, function(idx, action) {
 						if(action.type != 'commentCard') return;
 						$('<div>')
-						.append($('<img>')
-										.attr('src', 'https://trello-avatars.s3.amazonaws.com/' + action.memberCreator.avatarHash + '/30.png')
-										.attr('alt', action.memberCreator.fullName)
-										.addClass('member'))
-						.append(action.data.text + ' ')
-						.append($('<a>')
+							.append($('<img>')
+								.attr('src', 'https://trello-avatars.s3.amazonaws.com/' + action.memberCreator.avatarHash + '/30.png')
+								.attr('alt', action.memberCreator.fullName)
+								.addClass('member')
+							)
+							.append(
+								$('<div>')
+									.addClass('paragraph')
+									.append(action.data.text + ' ')
+									.append($('<a>')
 										.attr({
 											href: 'http://trello.com/c/'+ action.data.card.shortLink, 
 											target: "trello",
 											title: action.data.card.name})
-										.text('[' + action.data.card.idShort + ']')
-									 )
-						.append($('<code>')
-										.text(' ' + moment(action.date).fromNow())
-									 )
-						.appendTo(comments);
+										.text('[' + action.data.card.idShort + ']'))
+									.append($('<small>')
+											.html('<br/ >' + moment(action.date).fromNow())
+									)
+							)
+							.appendTo(comments);
 					});
 					
 				});
