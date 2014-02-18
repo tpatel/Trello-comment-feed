@@ -6,11 +6,15 @@
 			*, *:before, *:after {
 				-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
 			}
+			html {
+				background-color: #FCFFF5;
+			}
 			body {
 				font-family: 'Open Sans', sans-serif;
 				font-size:14px;
 				max-width:960px;
 				margin:0 auto;
+				color: #193441;
 			}
 			
 			#loggedout {
@@ -24,7 +28,8 @@
 			
 			#header {
 				padding: 4px;
-				background: #D3D3D3;
+				background: #D1DBBD;
+				text-align:center;
 			}
 			
 			#output {
@@ -36,11 +41,23 @@
 				margin-right:10px;
 				vertical-align:middle;
 			}
-			small {
-				color: #3D3D3D;
+			.details {
+				color: #91AA9D;
+				font-size:10px;
 			}
 			.paragraph {
 				overflow:hidden;
+				margin-bottom:10px;
+			}
+			.description {
+				white-space: pre-wrap;
+			}
+			a, a:hover, a:visited, a:active {
+				color: #3E606F;
+				text-decoration: none;
+			}
+			a:hover {
+				color: #91AA9D;
 			}
 		</style>
 	</head>
@@ -53,8 +70,7 @@
 	
 	<div id="loggedin">
 		<div id="header">
-			Logged in to as <span id="fullName"></span>
-			<a id="disconnect" href="#">Log Out</a>
+			Hi <span id="fullName">?</span>, the comment feed is refreshing every 10 minutes, but you can <a id="refresh" href="#">refresh</a> if yourself. <a id="disconnect" href="#">[Log out]</a>
 		</div>
 		
 		<div id="output"></div>
@@ -75,40 +91,44 @@
 			Trello.members.get("me", function(member){
 				$("#fullName").text(member.fullName);
 				
-				var comments = $("<div>")
-				.text("Loading comments...")
-				.appendTo("#output");
-				
-				Trello.get("boards/"+BOARD_ID+"/actions", {actions:'commentCard'}, function(actions) {
-					comments.empty();
-					$.each(actions, function(idx, action) {
-						if(action.type != 'commentCard') return;
-						$('<div>')
-							.append($('<img>')
-								.attr('src', 'https://trello-avatars.s3.amazonaws.com/' + action.memberCreator.avatarHash + '/30.png')
-								.attr('alt', action.memberCreator.fullName)
-								.addClass('member')
-							)
-							.append(
-								$('<div>')
-									.addClass('paragraph')
-									.append(action.data.text + ' ')
-									.append($('<a>')
-										.attr({
-											href: 'http://trello.com/c/'+ action.data.card.shortLink, 
-											target: "trello",
-											title: action.data.card.name})
-										.text('[' + action.data.card.idShort + ']'))
-									.append($('<small>')
-											.html('<br/ >' + moment(action.date).fromNow())
-									)
-							)
-							.appendTo(comments);
-					});
-					
-				});
+				refresh();
 			});
 			
+		};
+		
+		var refresh = function() {
+			var comments = $("#output").empty();
+			comments.text("Loading comments...");
+				
+			Trello.get("boards/"+BOARD_ID+"/actions", {actions:'commentCard'}, function(actions) {
+				comments.empty();
+				$.each(actions, function(idx, action) {
+					if(action.type != 'commentCard') return;
+					$('<div>')
+						.append($('<img>')
+							.attr('src', 'https://trello-avatars.s3.amazonaws.com/' + action.memberCreator.avatarHash + '/30.png')
+							.attr('alt', action.memberCreator.fullName)
+							.addClass('member')
+						)
+						.append(
+							$('<div>')
+								.addClass('paragraph')
+								.append($('<div>').addClass('description').html(action.data.text.replace(/(http[s]?:\/\/[^ \n\r\t)]+)/g, '<a href="$1">$1</a>') + ' '))
+								.append($('<div>')
+										.addClass('details')
+										.append(moment(action.date).fromNow() + ' ')
+										.append($('<a>')
+											.attr({
+												href: 'http://trello.com/c/'+ action.data.card.shortLink, 
+												target: "trello",
+												title: action.data.card.name})
+											.text('[' + action.data.card.idShort + ']'))
+								)
+						)
+						.appendTo(comments);
+				});
+				
+			});
 		};
 		
 		var updateLoggedIn = function() {
@@ -135,6 +155,14 @@
 				success: onAuthorize
 			})
 		});
+		
+		$("#refresh")
+		.click(function() {
+			refresh();
+		});
+		
+		setInterval(refresh, 10*60*1000);
+		
 		
 		$("#disconnect").click(logout);
 	</script>
